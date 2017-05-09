@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
-
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.AsyncTask;
@@ -16,12 +15,16 @@ import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 
+import com.m3b.rbaudiomixlibrary.AudioRecorderNative;
+import com.m3b.rbaudiomixlibrary.MusicPlayer;
+import com.m3b.rbaudiomixlibrary.Record;
+import com.m3b.rbaudiomixlibrary.WaveCanvas;
+import com.m3b.rbaudiomixlibrary.view.WaveSurfaceView;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -31,72 +34,47 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 
-import com.m3b.rbaudiomixlibrary.view.WaveSurfaceView;
-import com.m3b.rbaudiomixlibrary.AudioRecorderNative;
-import com.m3b.rbaudiomixlibrary.WaveCanvas;
-import com.m3b.rbaudiomixlibrary.MusicPlayer;
-
-
 public class MainActivity extends AppCompatActivity {
-    public AudioRecorderNative _AudioMix;
-    private String LOGMODULE = "MainActivity";
-    private Button _RecordStopButton;
-    private Button _RecordCutButton;
-    private AudioRecord _AudioRecorder = null;
+    private static int count;
     private final int _iSampleRateDef = 16000;//44100;//do not modify,16000 is good for meizu phone
-    private int _iRecorderBufferSize;
-    private byte[] _RecorderBuffer;
-    private boolean _mbStop;
-    private FileOutputStream aacDataOutStream = null;
     private final String SAVE_FILENAME = "record_file.aac";
     private final String NEW_SAVE_FILENAME = "new_record_file.aac";
     private final String MP3_FILENAME = "test.mp3";
     private final String MP3_FILENAME2 = "test2.mp3";
     private final String MP3_FILENAME3 = "test3.mp3";
-    private String[] params = new String[] {Environment.getExternalStorageDirectory().getPath() + "/" + MP3_FILENAME3,Environment.getExternalStorageDirectory().getPath() + "/" + MP3_FILENAME2};
-
+    public AudioRecorderNative _AudioMix;
+    protected ProgressBar micProgressBar;
+    protected ProgressBar musicProgressBar;
+    protected WaveCanvas mwaveCanvas;
+    private String LOGMODULE = "MainActivity";
+    private Button _RecordStopButton;
+    private Button _RecordCutButton;
+    private AudioRecord _AudioRecorder = null;
+    private int _iRecorderBufferSize;
+    private byte[] _RecorderBuffer;
+    private boolean _mbStop;
+    private FileOutputStream aacDataOutStream = null;
+    private String[] params = new String[]{Environment.getExternalStorageDirectory().getPath() + "/" + MP3_FILENAME3, Environment.getExternalStorageDirectory().getPath() + "/" + MP3_FILENAME2};
     private byte[] bgm;
     private boolean noMic;
     private Button _RecordPauseButton;
     private boolean noMusic;
     private Button _MusicPauseButton;
-
     private float fMusicGain = 0.05f;
     private float fMicGain = 1.0f;
     private SeekBar _MusicSeekBar;
     private SeekBar _MicSeekBar;
-    private static int count;
-
     private Button _PlayStartButton;
     private MediaPlayer mPlayer;
-
-
-
     private Button _ChangeMusicButton;
-
     private MusicPlayTask musicPlayTask;
-
     private int bgmIndex = 0;
-
     private MusicPlayer mMusicPlayer;
-
     private boolean isMixBgm = false;
     private MusicIntentReceiver myReceiver;
-
     private byte[] result;
-
     private boolean mBackLoop = true;
-
-
-    protected ProgressBar micProgressBar;
-
-    protected ProgressBar musicProgressBar;
-
-    protected WaveCanvas mwaveCanvas;
-
     private WaveSurfaceView waveSfv;
-
-
 
 
     private int AudioMixInit() {
@@ -108,15 +86,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-    private void WaveCanvasInit(){
+    private void WaveCanvasInit() {
         mwaveCanvas = new WaveCanvas();
         mwaveCanvas.baseLine = waveSfv.getHeight() / 2;
         mwaveCanvas.init(waveSfv);
 
         waveSfv.setVisibility(View.VISIBLE);
     }
-
 
 
     private void CreatAACFile() {
@@ -155,33 +131,34 @@ public class MainActivity extends AppCompatActivity {
         _RecordStopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (_mbStop) {
-                    return;
-                }
-                _mbStop = true;
-                noMusic = false;
+//                if (_mbStop) {
+//                    return;
+//                }
+//                _mbStop = true;
+//                noMusic = false;
+//
+//                if (_AudioRecorder.getRecordingState() != AudioRecord.RECORDSTATE_STOPPED)
+//                    _AudioRecorder.stop();
+//
+//                try {
+//                    aacDataOutStream.close();
+//                } catch (IOException e) {
+//                    // TODO Auto-generated catch block
+//                    e.printStackTrace();
+//                }
+//
+//                //mMusicPlayer.release();
+//
+//                _RecordPauseButton.setText("开始录制");
+//                _MusicPauseButton.setText("关闭音乐");
+//
+//                noMusic = false;
+//                count = 0;
+//
+//
+//                waveSfv.setVisibility(View.INVISIBLE);
 
-                if(_AudioRecorder.getRecordingState() != AudioRecord.RECORDSTATE_STOPPED )
-                    _AudioRecorder.stop();
-
-                try {
-                    aacDataOutStream.close();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-
-                mMusicPlayer.release();
-
-                _RecordPauseButton.setText("开始录制");
-                _MusicPauseButton.setText("关闭音乐");
-
-                noMusic = false;
-                count = 0;
-
-
-
-                waveSfv.setVisibility(View.INVISIBLE);
+                Record.instance().stopRecord();
 
             }
         });
@@ -208,27 +185,71 @@ public class MainActivity extends AppCompatActivity {
         _RecordPauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                noMic = !noMic;
-                if (++count == 1) {
+//                noMic = !noMic;
+//                if (++count == 1) {
+//
+//                CreatAACFile();
+//                    AudioMixInit();
+//                    WaveCanvasInit();
+//
+////                    musicPlayTask = new MusicPlayTask();
+////                    musicPlayTask.execute(params);
+//
+//                    noMic = false;
+//                    noMusic = true;
+//
+//                    StartMixThread();
+//
+//                    _RecordPauseButton.setText("暂停录制");
+//                } else {
+//                    if (noMic) {
+//                        _RecordPauseButton.setText("继续录制");
+//                    } else {
+//                        _RecordPauseButton.setText("暂停录制");
+//                    }
+//                }
 
-                    CreatAACFile();
-                    AudioMixInit();
-                    WaveCanvasInit();
-
-                    musicPlayTask = new MusicPlayTask();
-                    musicPlayTask.execute(params);
-
-                    StartMixThread();
-
-                    noMic = false;
-                    _RecordPauseButton.setText("暂停录制");
-                } else {
-                    if (noMic) {
-                        _RecordPauseButton.setText("继续录制");
-                    } else {
-                        _RecordPauseButton.setText("暂停录制");
+                String strPath = Environment.getExternalStorageDirectory().getPath();
+                String filename = strPath + "/" + SAVE_FILENAME;
+                Record.instance().startRecord("", filename, new Record.RecordListener() {
+                    @Override
+                    public void onRecordStart(String bgmPath, String filePath) {
+                        L.e("call: onRecordStart([bgmPath, filePath])-> " + filePath);
+                        WaveCanvasInit();
                     }
-                }
+
+                    @Override
+                    public void onRecordStop(String bgmPath, String filePath) {
+                        L.e("call: onRecordStop([bgmPath, filePath])-> " + filePath);
+
+                        try {
+                            mPlayer = new MediaPlayer();
+                            mPlayer.setDataSource(filePath);
+                            mPlayer.prepare();
+                            mPlayer.start();
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onRecordError(Exception error) {
+                        L.e("call: onRecordError([error])-> " + error.getMessage());
+                    }
+
+                    @Override
+                    public void onAmplitudeChanged(int amplitude) {
+                        L.e("call: onAmplitudeChanged([amplitude])-> " + amplitude);
+                        musicProgressBar.setProgress(amplitude);
+                    }
+
+                    @Override
+                    public void onAudioDataChanged(short[] buffer, int readsize, boolean mformRight) {
+                        L.e("call: onAudioDataChanged([buffer, readsize, mformRight])-> ");
+                        mwaveCanvas.updateAudioData(buffer, readsize, mformRight);
+                    }
+                });
             }
         });
 
@@ -238,11 +259,11 @@ public class MainActivity extends AppCompatActivity {
                 noMusic = !noMusic;
                 if (noMusic) {
                     _MusicPauseButton.setText("开启音乐");
-                    if(mMusicPlayer != null)
+                    if (mMusicPlayer != null)
                         mMusicPlayer.setNeedPlayPause(true);
                 } else {
                     _MusicPauseButton.setText("关闭音乐");
-                    if(mMusicPlayer != null)
+                    if (mMusicPlayer != null)
                         mMusicPlayer.setNeedPlayPause(false);
                 }
             }
@@ -270,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 bgmIndex = 1 - bgmIndex;
-                if(mMusicPlayer != null){
+                if (mMusicPlayer != null) {
                     mMusicPlayer.release();
                     musicPlayTask = new MusicPlayTask();
                     musicPlayTask.execute(params);
@@ -293,7 +314,7 @@ public class MainActivity extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
                 fMusicGain = progress / 100f;
-                if (mMusicPlayer !=null)
+                if (mMusicPlayer != null)
                     mMusicPlayer.setPlayVolume(progress / 100f);
                 //Log.d("###", " -- " + fMusicGain);
             }
@@ -326,7 +347,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA,Manifest.permission.MOUNT_UNMOUNT_FILESYSTEMS,Manifest.permission.RECORD_AUDIO,Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.MOUNT_UNMOUNT_FILESYSTEMS},
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.MOUNT_UNMOUNT_FILESYSTEMS, Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.MOUNT_UNMOUNT_FILESYSTEMS},
                 1000);
 
 
@@ -400,7 +421,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     private void StartMixThread() {
         Thread MixEncodeThread = new Thread(new Runnable() {
             @Override
@@ -424,7 +444,7 @@ public class MainActivity extends AppCompatActivity {
 
                     int iMicLen = _AudioRecorder.read(_RecorderBuffer, 0, _RecorderBuffer.length); // Fill buffer
 
-                    if (iMicLen !=  AudioRecord.ERROR_BAD_VALUE) {
+                    if (iMicLen != AudioRecord.ERROR_BAD_VALUE) {
 
                         _AudioMix.SetMusicVol(fMusicGain);
                         _AudioMix.SetVoiceVol(fMicGain * 1.5f);
@@ -433,12 +453,11 @@ public class MainActivity extends AppCompatActivity {
 
                             bgm = mMusicPlayer.getBackGroundBytes();
 
-                            if(bgm!= null) {
+                            if (bgm != null) {
                                 result = _AudioMix.MusicEncode(44100, 2, bgm, bgm.length);
-                                showAmplitude(bgm,bgm.length,musicProgressBar, fMusicGain);
+                                showAmplitude(bgm, bgm.length, musicProgressBar, fMusicGain);
                                 drawWavefrom();
-                            }
-                            else {
+                            } else {
                                 if (!mMusicPlayer.isPlayingMusic() && mMusicPlayer.isPCMDataEos() && mBackLoop) {
                                     mMusicPlayer.release();
                                     mMusicPlayer.startPlayBackMusic();
@@ -447,27 +466,27 @@ public class MainActivity extends AppCompatActivity {
                             }
                         } else if (!noMic && noMusic) {
                             result = _AudioMix.VoiceEncode(_iSampleRateDef, 2, _RecorderBuffer, iMicLen);
-                            showAmplitude(_RecorderBuffer,iMicLen,micProgressBar, fMicGain);
+                            showAmplitude(_RecorderBuffer, iMicLen, micProgressBar, fMicGain);
                             drawWavefrom();
                         } else if (!noMic && !noMusic) {
                             bgm = mMusicPlayer.getBackGroundBytes();
 
-                            if(bgm != null)
-                                showAmplitude(bgm,bgm.length,musicProgressBar, fMusicGain);
+                            if (bgm != null)
+                                showAmplitude(bgm, bgm.length, musicProgressBar, fMusicGain);
 
-                            if(bgm!=null && isMixBgm!=false) {
+                            if (bgm != null && isMixBgm != false) {
                                 _AudioMix.VoiceMixEncode(_iSampleRateDef, 2, _RecorderBuffer, iMicLen);
                                 result = _AudioMix.MusicMixEncode(44100, 2, bgm, bgm.length);
-                                showAmplitude(_RecorderBuffer,iMicLen,micProgressBar, fMicGain);
-                                showAmplitude(bgm,bgm.length,musicProgressBar, fMusicGain);
+                                showAmplitude(_RecorderBuffer, iMicLen, micProgressBar, fMicGain);
+                                showAmplitude(bgm, bgm.length, musicProgressBar, fMusicGain);
                                 drawWavefrom();
-                            }else if (bgm ==null && mMusicPlayer.isPCMDataEos() && mBackLoop){
-                                Log.i("@@@@@@@@@@@@","music finish.....");
+                            } else if (bgm == null && mMusicPlayer.isPCMDataEos() && mBackLoop) {
+                                Log.i("@@@@@@@@@@@@", "music finish.....");
                                 mMusicPlayer.release();
                                 mMusicPlayer.startPlayBackMusic();
-                            }else{
+                            } else {
                                 result = _AudioMix.VoiceEncode(_iSampleRateDef, 2, _RecorderBuffer, iMicLen);
-                                showAmplitude(_RecorderBuffer,iMicLen,micProgressBar, fMicGain);
+                                showAmplitude(_RecorderBuffer, iMicLen, micProgressBar, fMicGain);
                                 drawWavefrom();
                             }
 
@@ -493,11 +512,38 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void showAmplitude(byte[] sound, int len, ProgressBar progressBar, float gain) {
+        //
+        double sum = 0;
+        int size = sound.length;
+
+        for (int i = 0; i < size; i += 2) {
+            // convert byte pair to int
+            short buf1 = sound[i + 1];
+            short buf2 = sound[i];
+
+            buf1 = (short) ((buf1 & 0xff) << 8);
+            buf2 = (short) (buf2 & 0xff);
+
+            short res = (short) (buf1 | buf2);
+            sum += res * res * gain;
+        }
+
+        final double amplitude = sum / len;
+        progressBar.setProgress((int) Math.sqrt(amplitude));
+    }
+
+    private void drawWavefrom() {
+        short[] shorts = new short[_RecorderBuffer.length / 2];
+        ByteBuffer.wrap(_RecorderBuffer).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shorts);
+        mwaveCanvas.updateAudioData(shorts, _RecorderBuffer.length / 2, false);
+
+    }
 
     class MusicPlayTask extends AsyncTask<String, Integer, Void> {
         @Override
         protected Void doInBackground(String... params) {
-            if(bgmIndex == 1)
+            if (bgmIndex == 1)
                 mMusicPlayer = new MusicPlayer(params[1]);
             else
                 mMusicPlayer = new MusicPlayer(params[0]);
@@ -516,9 +562,9 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
     private class MusicIntentReceiver extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
+        @Override
+        public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(Intent.ACTION_HEADSET_PLUG)) {
                 int state = intent.getIntExtra("state", -1);
                 switch (state) {
@@ -535,38 +581,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-    }
-
-
-
-    private void showAmplitude(byte[] sound,int len, ProgressBar progressBar,float gain){
-        //
-        double sum = 0;
-        int size  = sound.length;
-
-        for (int i = 0; i < size; i+=2) {
-            // convert byte pair to int
-            short buf1 = sound[i+1];
-            short buf2 = sound[i];
-
-            buf1 = (short) ((buf1 & 0xff) << 8);
-            buf2 = (short) (buf2 & 0xff);
-
-            short res= (short) (buf1 | buf2);
-            sum += res * res * gain;
-        }
-
-        final double amplitude = sum / len;
-        progressBar.setProgress((int) Math.sqrt(amplitude));
-    }
-
-
-
-    private void drawWavefrom(){
-        short[] shorts = new short[_RecorderBuffer.length/2];
-        ByteBuffer.wrap(_RecorderBuffer).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shorts);
-        mwaveCanvas.updateAudioData(shorts,_RecorderBuffer.length/2,false);
-
     }
 
 }
