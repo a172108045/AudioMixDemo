@@ -219,8 +219,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onRecordStop(String bgmPath, String filePath) {
-                        L.e("call: onRecordStop([bgmPath, filePath])-> " + filePath);
+                    public void onRecordStop(String bgmPath, String filePath, long time) {
+                        L.e("call: onRecordStop([bgmPath, filePath])-> " + filePath + time / 1000);
 
                         try {
                             mPlayer = new MediaPlayer();
@@ -236,6 +236,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onRecordError(Exception error) {
                         L.e("call: onRecordError([error])-> " + error.getMessage());
+                    }
+
+                    @Override
+                    public void onRecordTimeChanged(long millis) {
+                        L.e("call: onRecordTimeChanged([millis])-> " + millis / 1000);
                     }
 
                     @Override

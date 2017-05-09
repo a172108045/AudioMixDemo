@@ -27,6 +27,7 @@ public class Record {
 
     private final AudioRecorderNative _AudioMix;
     RecordListener mRecordListener;
+    long startRecordTime = 0l;//开始录制的时间, 用来计算总共录制时长
     private MusicPlayer mMusicPlayer;
     private boolean recording;
     /**
@@ -47,7 +48,6 @@ public class Record {
      */
     private boolean mBackMusicLoop = true;
     private FileOutputStream aacDataOutStream = null;
-
     /**
      * 当插入耳机时, 需要设置为true
      */
@@ -82,6 +82,8 @@ public class Record {
             } else {
                 noMusic = true;
             }
+
+            startRecordTime = System.currentTimeMillis();
 
             if (recordListener != null) {
                 recordListener.onRecordStart(bgmMusicPath, mRecordFilePath);
@@ -211,6 +213,10 @@ public class Record {
                         }
 
                     }
+
+                    if (mRecordListener != null) {
+                        mRecordListener.onRecordTimeChanged(getTime());
+                    }
                 }
 
                 _AudioRecorder.stop();
@@ -224,11 +230,15 @@ public class Record {
                 }
 
                 if (mRecordListener != null) {
-                    mRecordListener.onRecordStop(bgmMusicPath, mRecordFilePath);
+                    mRecordListener.onRecordStop(bgmMusicPath, mRecordFilePath, getTime());
                 }
             }
         });
         MixEncodeThread.start();
+    }
+
+    private long getTime() {
+        return System.currentTimeMillis() - startRecordTime;
     }
 
     private void startPlayMusic() {
@@ -272,9 +282,11 @@ public class Record {
     public interface RecordListener {
         void onRecordStart(String bgmPath, String filePath);
 
-        void onRecordStop(String bgmPath, String filePath);
+        void onRecordStop(String bgmPath, String filePath, long time);
 
         void onRecordError(Exception error);
+
+        void onRecordTimeChanged(long millis);
 
 
         /**
